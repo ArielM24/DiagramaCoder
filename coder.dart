@@ -70,10 +70,14 @@ class _Shape {
   String type;
   String id;
   String content;
+  @override
+  String toString() => "{$type, $id, $content}";
 }
 
 class _Line extends _Shape {
   String id1, id2;
+  @override
+  String toString() => super.toString() + " $id1, $id2";
 }
 
 List<_Shape> getShapes(List<Map> shapes) {
@@ -81,8 +85,30 @@ List<_Shape> getShapes(List<Map> shapes) {
   for (var s in shapes) {
     String type = s["classList"]["1"];
     if (type != "line") {
-      print(type);
+      l.add(getShape(s));
+    } else {
+      l.add(getLine(s));
     }
   }
+  return l;
+}
+
+_Shape getShape(Map<dynamic, dynamic> shape) {
+  _Shape s = _Shape();
+  s.type = shape["classList"]["1"];
+  s.id = shape["id"];
+  s.content = shape["title"];
+  return s;
+}
+
+_Line getLine(Map<dynamic, dynamic> shape) {
+  _Line l = _Line();
+
+  l.type = shape["classList"]["1"];
+  l.id = shape["id"];
+  l.content = shape["title"];
+  l.id1 = shape["classList"]["4"].split("id1")[1];
+  l.id2 = shape["classList"]["5"].split("id2")[1];
+
   return l;
 }
