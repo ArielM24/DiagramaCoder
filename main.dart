@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import "package:file_picker/file_picker.dart";
 import 'dart:io';
+import 'package:DiagramaCoder/coder.dart';
 
 void main() {
   runApp(MainWindow());
@@ -15,18 +16,18 @@ class MainWindow extends StatelessWidget {
   }
 }
 
+// ignore: camel_case_types
 class _MainWindow_ extends StatefulWidget {
   @override
   createState() => _MainWindow();
 }
 
 class _MainWindow extends State<_MainWindow_> {
-  var _file = "";
+  String _filePath = "";
+  File file;
   var selectedLangs = <bool>[];
   var checkboxes;
-  var generated = false;
-  var _controller = TextEditingController();
-  var _previewItems = [];
+  bool generated = false;
   var _textControllers = [];
   var langs = <String>[
     "C",
@@ -40,11 +41,14 @@ class _MainWindow extends State<_MainWindow_> {
   var _scrollPreview = ScrollController();
   Size screenSize;
   var _previewWidth = 500.0;
+  var _cbheight = 60.0;
   @override
   Widget build(BuildContext context) {
     screenSize = MediaQuery.of(context).size;
     print(screenSize.width);
+    print(screenSize.height);
     _previewWidth = screenSize.width - 320;
+    _cbheight = screenSize.height * 0.0857142857143;
     return MaterialApp(
       home: Scaffold(
           appBar: AppBar(
@@ -68,7 +72,7 @@ class _MainWindow extends State<_MainWindow_> {
         ConstrainedBox(
           constraints: BoxConstraints(minWidth: 300, minHeight: 700),
           child: Container(
-            padding: EdgeInsets.all(50),
+            padding: EdgeInsets.only(top: 10, left: 10, right: 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -79,7 +83,7 @@ class _MainWindow extends State<_MainWindow_> {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Text(
-                        "File:$_file",
+                        "File:$_filePath",
                       ),
                     ),
                   ),
@@ -93,7 +97,7 @@ class _MainWindow extends State<_MainWindow_> {
                 checkboxes[5],
                 checkboxes[6],
                 RaisedButton(
-                  onPressed: langSelected() ? () {} : null,
+                  onPressed: langSelected() ? _createFiles : null,
                   child: Text("Create"),
                   disabledColor: Colors.blue,
                 )
@@ -114,7 +118,11 @@ class _MainWindow extends State<_MainWindow_> {
       }
       cbs.add(SizedBox(
         width: 200,
+        height: _cbheight,
         child: CheckboxListTile(
+          contentPadding: EdgeInsets.only(bottom: 5),
+          controlAffinity: ListTileControlAffinity.platform,
+          dense: true,
           value: selectedLangs[i],
           onChanged: (bool val) {
             setState(() {
@@ -192,10 +200,14 @@ class _MainWindow extends State<_MainWindow_> {
   }
 
   _selectFile() async {
-    File f = await FilePicker.getFile();
-    print(f.path);
+    file = await FilePicker.getFile();
+    print(file.path);
     setState(() {
-      _file = f != null ? f.path : "";
+      _filePath = file != null ? file.path : "";
     });
+  }
+
+  _createFiles() async {
+    await readJson(file);
   }
 }
