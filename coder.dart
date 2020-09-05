@@ -2,68 +2,16 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 
-Future<List<Map>> readJson(File f) async {
+Future<List<_Shape>> readJson(File f) async {
   List<Map> shapes = List<Map>();
   Map<String, dynamic> data = JsonCodec().decode(await f.readAsString());
-  data["shapes"].forEach((e) => shapes.add(e));
-  getShapes(shapes);
-  return shapes;
-}
+  data["shapes"].forEach((e) {
+    if (e["classList"]["1"] != "line") {
+      shapes.add(e);
+    }
+  });
 
-class _FunctionData {
-  String id;
-  String type;
-  String name;
-  String args;
-}
-
-class _VariableData {
-  String id;
-  String name;
-}
-
-class _IsnstructionData {
-  String id;
-  bool asing;
-  String valName;
-  _ConstData valConts;
-  _FunctionData valFunc;
-  _OperationData valOpe;
-  String content;
-}
-
-class _IfElseData {
-  String id;
-  String operation;
-  String idTrue, idFalse;
-}
-
-class _InOutData {
-  bool inOut;
-  String content;
-  String id;
-}
-
-class _ConstData {
-  String type;
-  String content;
-}
-
-class _OperationData {
-  String id;
-  String content;
-}
-
-class _ProgramFlow {
-  String id1, id2;
-}
-
-class _ProgramData {
-  List<_VariableData> _vars;
-  List<_IsnstructionData> _instr;
-  List<_FunctionData> _funcs;
-  List<_InOutData> _inOuts;
-  List<_ProgramFlow> _flow;
+  return getShapes(shapes);
 }
 
 class _Shape {
@@ -86,8 +34,10 @@ List<_Shape> getShapes(List<Map> shapes) {
     String type = s["classList"]["1"];
     if (type != "line") {
       l.add(getShape(s));
+      print(s["id"] + ":" + s["title"]);
     } else {
       l.add(getLine(s));
+      print(s["title"]);
     }
   }
   return l;
@@ -111,4 +61,404 @@ _Line getLine(Map<dynamic, dynamic> shape) {
   l.id2 = shape["classList"]["5"].split("id2")[1];
 
   return l;
+}
+
+class coder {
+  int ifelse = 0; //1 -> true, 2-> else
+  List<_Shape> _shapes;
+  coder.build(this._shapes);
+  String getCodeC() {
+    String code = "#include<stdio.h>\n\nint main(){\n";
+    for (_Shape s in _shapes) {
+      code += getCShape(s);
+    }
+
+    return code + "\n\treturn 0;\n}";
+  }
+
+  String getCShape(_Shape s) {
+    switch (s.type) {
+      case "rectangulo":
+        String str = '\t${s.content};\n';
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "paralelogramo1":
+        String str = inC(s.content);
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "paralelogramo2":
+        String str = '\tprintf("${s.content}\\n");\n';
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "rombo":
+        ifelse = 1;
+        return '\tif(${s.content}){\n\t';
+        break;
+      default:
+        return "";
+    }
+  }
+
+  String inC(String content) {
+    var l = content.split(":");
+    String format;
+    switch (l[0]) {
+      case "int":
+        format = "%d";
+        break;
+      case "float":
+        format = "%f";
+        break;
+    }
+    return '\tscanf("$format",&${l[1]});\n';
+  }
+
+  String getCodeCpp() {
+    String code = "#include<iostream>\nusing namespace std;\nint main(){\n";
+    for (_Shape s in _shapes) {
+      code += getCppShape(s);
+    }
+
+    return code + "\n\treturn 0;\n}";
+  }
+
+  String getCppShape(_Shape s) {
+    switch (s.type) {
+      case "rectangulo":
+        String str = '\t${s.content};\n';
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "paralelogramo1":
+        String str = "\tcin>>${s.content.split(':')[1]};\n";
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "paralelogramo2":
+        String str = '\tcout<<"${s.content}"<<endl;\n';
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "rombo":
+        ifelse = 1;
+        return '\tif(${s.content}){\n\t';
+        break;
+      default:
+        return "";
+    }
+  }
+
+  String getCodeJava() {
+    String code = "import java.util.Scanner;\n"
+        "public class output{\n"
+        "\tstatic Scanner scan = new Scanner(System.in);\n"
+        "\tpublic static void main(String[] args){\n";
+    for (_Shape s in _shapes) {
+      code += getJavaShape(s);
+    }
+
+    return code + "\n\t}\n}";
+  }
+
+  String getJavaShape(_Shape s) {
+    switch (s.type) {
+      case "rectangulo":
+        String str = '\t${s.content};\n';
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "paralelogramo1":
+        String str = inJava(s.content);
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "paralelogramo2":
+        String str = '\tSystem.out.println("${s.content}");\n';
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "rombo":
+        ifelse = 1;
+        return '\tif(${s.content}){\n\t';
+        break;
+      default:
+        return "";
+    }
+  }
+
+  String inJava(String content) {
+    var l = content.split(":");
+    switch (l[0]) {
+      case "int":
+        return "\t${l[1]} = scan.nextInt();\n";
+        break;
+      case "float":
+        return "\t${l[1]} = scan.nextFloat();\n";
+        break;
+      default:
+        return "";
+    }
+  }
+
+  String getCodePython() {
+    String code = "if __name__ == '__main__':\n";
+    for (_Shape s in _shapes) {
+      code += getPythonShape(s);
+    }
+
+    return code;
+  }
+
+  String getPythonShape(_Shape s) {
+    switch (s.type) {
+      case "rectangulo":
+        String str = '\t${s.content.split(" ")[1]} = 0\n';
+        if (ifelse == 1) {
+          str += "\n";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "\telse:\n\t\t" + str + "\n";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "paralelogramo1":
+        String str = inPython(s.content);
+        if (ifelse == 1) {
+          str += "\n";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "\telse:\n\t\t" + str + "\n";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "paralelogramo2":
+        String str = '\tprint("${s.content}");\n';
+        if (ifelse == 1) {
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "\telse:\n\t\t" + str + "\n";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "rombo":
+        ifelse = 1;
+        return '\tif ${s.content} :\n\t';
+        break;
+      default:
+        return "";
+    }
+  }
+
+  String inPython(String content) {
+    var l = content.split(":");
+    switch (l[0]) {
+      case "int":
+        return "\t${l[1]} = int(input())\n";
+        break;
+      case "float":
+        return "\t${l[1]} = float(intput())\n";
+        break;
+      default:
+        return "";
+    }
+  }
+
+  String getCodeGo() {
+    String code = "package main\n"
+        'import "fmt"\n'
+        "func main(){\n";
+    for (_Shape s in _shapes) {
+      code += getGoShape(s);
+    }
+
+    return code + "\n}";
+  }
+
+  String getGoShape(_Shape s) {
+    switch (s.type) {
+      case "rectangulo":
+        var l = s.content.split(" ");
+        String str = '\tvar ${l[1]} ${l[0]};\n';
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "paralelogramo1":
+        String str = inGo(s.content);
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "paralelogramo2":
+        String str = '\tfmt.Println("${s.content}");\n';
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "rombo":
+        ifelse = 1;
+        return '\tif ${s.content} {\n\t';
+        break;
+      default:
+        return "";
+    }
+  }
+
+  String inGo(String content) {
+    var l = content.split(":");
+    String format;
+    switch (l[0]) {
+      case "int":
+        format = "%d";
+        break;
+      case "float":
+        format = "%f";
+        break;
+    }
+    return '\tfmt.Scanf("$format",&${l[1]});\n';
+  }
+
+  String getCodeDart() {
+    String code = "import 'dart:io';\n"
+        "main(){\n";
+    for (_Shape s in _shapes) {
+      code += getDartShape(s);
+    }
+
+    return code + "\n}";
+  }
+
+  String getDartShape(_Shape s) {
+    switch (s.type) {
+      case "rectangulo":
+        var l = s.content.split(" ");
+        String str = '\tvar ${l[1]};\n';
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "paralelogramo1":
+        String str = inDart(s.content);
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "paralelogramo2":
+        String str = '\tprint("${s.content}");\n';
+        if (ifelse == 1) {
+          str += "\t}";
+          ifelse = 2;
+        } else if (ifelse == 2) {
+          str = "else{\n\t\t" + str + "\t}";
+          ifelse = 0;
+        }
+        return str;
+        break;
+      case "rombo":
+        ifelse = 1;
+        return '\tif(${s.content}){\n\t';
+        break;
+      default:
+        return "";
+    }
+  }
+
+  String inDart(String content) {
+    var l = content.split(":");
+    String format;
+    switch (l[0]) {
+      case "int":
+        format = "int.parse";
+        break;
+      case "float":
+        format = "float.parse";
+        break;
+    }
+    return '\t${l[1]} = $format(stdin.readLineSync());\n';
+  }
 }

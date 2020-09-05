@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import "package:file_picker/file_picker.dart";
 import 'dart:io';
 import 'package:DiagramaCoder/coder.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(MainWindow());
@@ -36,7 +37,6 @@ class _MainWindow extends State<_MainWindow_> {
     "Python",
     "Go",
     "Dart",
-    "Javascript"
   ];
   var _scrollPreview = ScrollController();
   Size screenSize;
@@ -50,6 +50,7 @@ class _MainWindow extends State<_MainWindow_> {
     _previewWidth = screenSize.width - 320;
     _cbheight = screenSize.height * 0.0857142857143;
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
           appBar: AppBar(
             title: Text("Diagrama Coder"),
@@ -88,18 +89,38 @@ class _MainWindow extends State<_MainWindow_> {
                     ),
                   ),
                 ),
-                RaisedButton(onPressed: _selectFile, child: Text("Open")),
+                Row(
+                  children: [
+                    RaisedButton(onPressed: _selectFile, child: Text("Open")),
+                    SizedBox(
+                      width: 20,
+                    ),
+                    RaisedButton(
+                        onPressed: _createPreview, child: Text("Preview")),
+                  ],
+                ),
                 checkboxes[0],
                 checkboxes[1],
                 checkboxes[2],
                 checkboxes[3],
                 checkboxes[4],
                 checkboxes[5],
-                checkboxes[6],
-                RaisedButton(
-                  onPressed: langSelected() ? _createFiles : null,
-                  child: Text("Create"),
-                  disabledColor: Colors.blue,
+                Row(
+                  children: [
+                    RaisedButton(
+                      onPressed: langSelected() ? _createFiles : null,
+                      child: Text("Create"),
+                      disabledColor: Colors.blue,
+                    ),
+                    SizedBox(
+                      width: 20,
+                    ),
+                    RaisedButton(
+                      onPressed: langSelected() ? _cleanPreview : null,
+                      child: Text("Clean"),
+                      disabledColor: Colors.blue,
+                    )
+                  ],
                 )
               ],
             ),
@@ -200,14 +221,103 @@ class _MainWindow extends State<_MainWindow_> {
   }
 
   _selectFile() async {
-    file = await FilePicker.getFile();
+    file = await FilePicker.getFile(
+        type: FileType.custom, allowedExtensions: ["json", "df"]);
     print(file.path);
     setState(() {
       _filePath = file != null ? file.path : "";
     });
   }
 
+  _createPreview() async {
+    var Coder = coder.build(await readJson(file));
+    if (selectedLangs[0]) {
+      var cCode = Coder.getCodeC();
+      _textControllers[0].text = cCode;
+    }
+
+    if (selectedLangs[1]) {
+      var cppCode = Coder.getCodeCpp();
+      _textControllers[1].text = cppCode;
+    }
+
+    if (selectedLangs[2]) {
+      var javaCode = Coder.getCodeJava();
+      _textControllers[2].text = javaCode;
+    }
+    if (selectedLangs[3]) {
+      var pythonCode = Coder.getCodePython();
+      _textControllers[3].text = pythonCode;
+    }
+    if (selectedLangs[4]) {
+      var goCode = Coder.getCodeGo();
+      _textControllers[4].text = goCode;
+    }
+    if (selectedLangs[5]) {
+      var dartCode = Coder.getCodeDart();
+      _textControllers[5].text = dartCode;
+    }
+  }
+
+  _cleanPreview() {
+    for (var txt in _textControllers) {
+      txt.text = "";
+    }
+  }
+
   _createFiles() async {
-    await readJson(file);
+    await _createPreview();
+    Directory dir = await getApplicationDocumentsDirectory();
+    String path = dir.path +
+        Platform.pathSeparator +
+        "CoderOutputs" +
+        Platform.pathSeparator;
+    Directory d = Directory(path);
+    if (!await d.exists()) await d.create();
+    if (selectedLangs[0]) {
+      File f = File(path + "output.c");
+      await f.create();
+      f.writeAsString(_textControllers[0].text);
+    }
+    if (selectedLangs[1]) {
+      File f = File(path + "output.cpp");
+      await f.create();
+      f.writeAsString(_textControllers[1].text);
+    }
+    if (selectedLangs[2]) {
+      File f = File(path + "output.java");
+      await f.create();
+      f.writeAsString(_textControllers[2].text);
+    }
+    if (selectedLangs[3]) {
+      File f = File(path + "output.py");
+      await f.create();
+      f.writeAsString(_textControllers[3].text);
+    }
+    if (selectedLangs[4]) {
+      File f = File(path + "output.go");
+      await f.create();
+      f.writeAsString(_textControllers[4].text);
+    }
+    if (selectedLangs[5]) {
+      File f = File(path + "output.dart");
+      await f.create();
+      f.writeAsString(_textControllers[5].text);
+    }
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Done"),
+            content: Text("Files Created at $path"),
+            actions: [
+              FlatButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("Ok"))
+            ],
+          );
+        });
   }
 }
